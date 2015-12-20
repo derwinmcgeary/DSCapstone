@@ -1,0 +1,50 @@
+---
+title: "Preliminary Report"
+author: "Derwin McGeary"
+date: "20 December 2015"
+output: html_document
+---
+## Introduction
+This is a preliminary report on the datasets for the Capstone Project. I will give a quick summary of the contents and nature of the data.
+
+## The basics
+
+```{r, echo=FALSE, cache=TRUE}
+library("tm")
+library("RWeka")
+library("ggplot2")
+news <- readLines("final/en_US/en_US.news.txt")
+blogs <- readLines("final/en_US/en_US.blogs.txt")
+tweets <- readLines("final/en_US/en_US.twitter.txt")
+```
+
+We have three large files of English text, from three sources: News articles, blogs, and tweets. Each line contains one article, blog or tweet. We have a fairly large amount of data, `r length(tweets)` tweets, `r length(blogs)` blogs, and `r length(news)` news articles.
+
+### The Tweets
+```{r, echo=FALSE, cache=TRUE}
+tlengths <- nchar(tweets)
+tsummary <- summary(tlengths)
+ggplot(as.data.frame(tlengths), aes(x=tlengths)) + ggtitle("Distribution of Tweet Lengths") + 
+    geom_histogram(binwidth=1, colour="white", fill="#55acee") + theme_bw()
+```
+
+This plot shows that the longest tweet is `r max(tlengths)` characters, and it we can see that there is a hard limit as that is the most popular length, although there is a wide distribution of lengths.
+
+
+### The News
+```{r, echo=FALSE, cache=TRUE}
+nlengths <- nchar(news)
+nsummary <- summary(nlengths)
+ggplot(as.data.frame(nlengths), aes(x=nlengths)) + ggtitle("Distribution of News Article Lengths") + 
+    geom_histogram(binwidth=10, colour="white", fill="#BB1919") + theme_bw()
+```
+
+### The Blogs
+
+```{r, echo=FALSE, cache=TRUE}
+blengths <- nchar(blogs)
+bsummary <- summary(blengths)
+ggplot(as.data.frame(blengths), aes(x=blengths)) + ggtitle("Distribution of Blog Post Lengths") + 
+    geom_histogram(binwidth=1, colour="black", fill="white") + theme_bw()
+```
+

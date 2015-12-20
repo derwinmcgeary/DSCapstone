@@ -9,22 +9,22 @@ This is a preliminary report on the datasets for the Capstone Project. I will gi
 
 ## The basics
 
-```{r, echo=FALSE, cache=TRUE}
+```{r, echo=FALSE}
 library("tm")
-library("RWeka")
 library("ggplot2")
+library("knitr")
 
 ```
 
-We have three large files of English text, from three sources: News articles, blogs, and tweets. Each line contains one article, blog or tweet. We have a fairly large amount of data, `r length(tweets)` tweets, `r length(blogs)` blogs, and `r length(news)` news articles.
+We have three large files of English text, from three sources: News articles, blogs, and tweets. Each line contains one article, blog or tweet. We have a fairly large amount of data, 2360148 tweets, 899288 blogs, and 1010242 news articles.
 
 ### The Tweets
-```{r, echo=FALSE, cache=TRUE}
+```{r, echo=FALSE}
 tweets <- readLines("final/en_US/en_US.twitter.txt")
 tlengths <- nchar(tweets)
 tsummary <- summary(tlengths)
 ggplot(as.data.frame(tlengths), aes(x=tlengths)) + 
-  ggtitle("Distribution of Tweet Lengths") + xlab("Character Count")
+  ggtitle("Distribution of Tweet Lengths") + xlab("Character Count") +
     geom_histogram(binwidth=1, colour="white", fill="#55acee") + theme_bw()
 kable(tsummary)
 rm(tweets)
@@ -34,7 +34,7 @@ This plot shows that the longest tweet is `r max(tlengths)` characters, and it w
 
 
 ### The News
-```{r, echo=FALSE, cache=TRUE}
+```{r, echo=FALSE}
 news <- readLines("final/en_US/en_US.news.txt")
 nwords <- sapply(gregexpr("[[:alpha:]]+", news), function(x) sum(x > 0))
 remov <- nwords<5 || nwords > 1000
@@ -52,7 +52,7 @@ rm(news)
 
 ### The Blogs
 
-```{r, echo=FALSE, cache=TRUE}
+```{r, echo=FALSE}
 blogs <- readLines("final/en_US/en_US.blogs.txt")
 blengths <- nchar(blogs)
 bwords <- sapply(gregexpr("[[:alpha:]]+", blogs), function(x) sum(x > 0))

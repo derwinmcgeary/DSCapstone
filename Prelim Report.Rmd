@@ -4,34 +4,33 @@ author: "Derwin McGeary"
 date: "20 December 2015"
 output: html_document
 ---
-## Introduction
+# Introduction
 This is a preliminary report on the datasets for the Capstone Project. I will give a quick summary of the contents and nature of the data.
 
-## The basics
+## The Data
 
-```{r, echo=FALSE}
-suppressWarnings({
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
   library("tm")
   library("ggplot2")
+  library("gridExtra")
   library("knitr")
-})
 ```
 
-We have three large files of English text, from three sources: News articles, blogs, and tweets. Each line contains one article, blog or tweet. We have a fairly large amount of data, 2360148 tweets, 899288 blogs, and 1010242 news articles.
+We have three large files of English text, from three sources: News articles, blogs, and tweets. Each line contains one article, blog or tweet. We have a fairly large amount of data: 2360148 tweets, 899288 blogs, and 1010242 news articles.
 
 ### The Tweets
-```{r, echo=FALSE}
-suppressWarnings(tweets <- readLines("final/en_US/en_US.twitter.txt"))
+```{r, echo=FALSE, warning=FALSE}
+tweets <- readLines("final/en_US/en_US.twitter.txt")
 tlengths <- nchar(tweets)
 tsummary <- summary(tlengths)
 ggplot(as.data.frame(tlengths), aes(x=tlengths)) + 
   ggtitle("Distribution of Tweet Lengths") + xlab("Character Count") +
     geom_histogram(binwidth=1, colour="white", fill="#55acee") + theme_bw()
-print(tsummary)
+# knitr::kable(summary(tlengths))
 rm(tweets)
 ```
 
-This plot shows that the longest tweet is `r max(tlengths)` characters, and it we can see that there is a hard limit as that is the most popular length, although there is a wide distribution of lengths.
+This plot shows that the longest tweet is `r max(tlengths)` characters, and it we can see that there is a hard limit as that is the most popular length, although there is a wide distribution of lengths. There is a sharp dip near to that length, which I would guess is due to tweets which are 140 characters long including @mentions having them removed in this dataset.
 
 
 ### The News
@@ -50,11 +49,11 @@ nwsummary <- summary(nwords)
 ggplot(as.data.frame(nwords), aes(x=nwords)) + 
   ggtitle("Distribution of News Article Lengths") + xlab("Word Count")+ 
     geom_histogram(binwidth=1, colour="#bb1919", fill="#bb1919") + theme_bw()
-print(nsummary)
+# knitr::kable(nsummary)
 rm(news)
 ```
 
-We have filtered some very long lists of names and items with four words or less (which upon inspection turned out to be meaningless text fragments). The longest article is `r max(nwords)` words, and the average is `r mean(nwords)`
+We have filtered some very long lists of names and items with four words or less (which upon inspection turned out to be meaningless text fragments). The longest article is `r max(nwords)` words, and the average is `r mean(nwords)`. A total of `r length(nwords)` articles and `r sum(nwords)` words.
 
 ### The Blogs
 
@@ -63,12 +62,21 @@ blogs <- readLines("final/en_US/en_US.blogs.txt")
 blengths <- nchar(blogs)
 bwords <- sapply(gregexpr("[[:alpha:]]+", blogs), function(x) sum(x > 0))
 bsummary <- summary(blengths)
-ggplot(as.data.frame(bwords), aes(x=bwords)) + 
+x <- ggplot(as.data.frame(bwords), aes(x=bwords)) + 
   ggtitle("Distribution of Blog Post Lengths") + xlab("Word Count") +
     geom_histogram(binwidth=1, colour="black", fill="white") + theme_bw()
-print(bsummary)
+# knitr::kable(bsummary)
+newbwords <- bwords[bwords<500]
+y <- ggplot(as.data.frame(newbwords), aes(x=newbwords)) + 
+  ggtitle("Distribution of Blog Post Lengths") + xlab("Word Count") +
+    geom_histogram(binwidth=1, colour="black", fill="white") + theme_bw()
+grid.arrange(x,y)
 bwsummary <- summary(bwords)
 rm(blogs)
 ```
 
 This dataset is highly skewed, as only `r length(bwords[bwords>500])` articles (`r round(length(bwords[bwords>500])/length(bwords) * 100,3)`%) are longer than 500 words. The average is `r round(mean(bwords))` words.
+
+# Project Strategy
+
+I plan to start off with a fairly unambitious 3rd-level stupid backoff model to have a minimal working system as fast as possible. My next stage will be an attempt to classify inputs as news, blog, or tweet and suggest based on that specific corpus. For example, the word "yo" is a strong hint that we are not reading the nightly news, whereas "incident" or "minister" would tip us off to a greater level of formality. A good strategy might be to use the news dataset as the generic, and add the Twitter dataset when we have some confidence that this is informal English.

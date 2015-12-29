@@ -1,11 +1,11 @@
 ---
 title: "Preliminary Report"
 author: "Derwin McGeary"
-date: "20 December 2015"
+date: "29 December 2015"
 output: html_document
 ---
 # Introduction
-This is a preliminary report on the datasets for the Capstone Project. I will give a quick summary of the contents and nature of the data.
+This is a preliminary report on the datasets for the Capstone Project. I will give a quick summary of the contents and nature of the data, and describe my plan for how to proceed further.
 
 ## The Data
 
@@ -19,22 +19,22 @@ This is a preliminary report on the datasets for the Capstone Project. I will gi
 We have three large files of English text, from three sources: News articles, blogs, and tweets. Each line contains one article, blog or tweet. We have a fairly large amount of data: 2360148 tweets, 899288 blogs, and 1010242 news articles.
 
 ### The Tweets
-```{r, echo=FALSE, warning=FALSE}
+```{r, echo=FALSE, warning=FALSE, cache=TRUE}
 tweets <- readLines("final/en_US/en_US.twitter.txt")
 tlengths <- nchar(tweets)
 tsummary <- summary(tlengths)
 ggplot(as.data.frame(tlengths), aes(x=tlengths)) + 
-  ggtitle("Distribution of Tweet Lengths") + xlab("Character Count") +
-    geom_histogram(binwidth=1, colour="white", fill="#55acee") + theme_bw()
+  ggtitle("Distribution of Tweet Lengths") + xlab("Character Count") + ylab("Number of Tweets") +
+    geom_histogram(binwidth=1, colour="white", fill="#55acee") + scale_x_continuous(breaks=seq(0, 140, 20)) + theme_bw()
 # knitr::kable(summary(tlengths))
 rm(tweets)
 ```
 
-This plot shows that the longest tweet is `r max(tlengths)` characters, and it we can see that there is a hard limit as that is the most popular length, although there is a wide distribution of lengths. There is a sharp dip near to that length, which I would guess is due to tweets which are 140 characters long including @mentions having them removed in this dataset.
+This plot shows that the longest tweet is `r max(tlengths)` characters, and we can see that there is a hard limit as that is also the most popular length, although there is a wide distribution of lengths. There is a sharp dip near to that length, which I would guess is due to tweets which are 140 characters long including @mentions having them removed in this dataset.
 
 
 ### The News
-```{r, echo=FALSE}
+```{r, echo=FALSE, cache=TRUE}
 news <- readLines("final/en_US/en_US.news.txt")
 nwords <- sapply(gregexpr("[[:alpha:]]+", news), function(x) sum(x > 0))
 keep <- nwords<1000
@@ -47,36 +47,86 @@ nlengths <- nchar(news)
 nsummary <- summary(nlengths)
 nwsummary <- summary(nwords)
 ggplot(as.data.frame(nwords), aes(x=nwords)) + 
-  ggtitle("Distribution of News Article Lengths") + xlab("Word Count")+ 
+  ggtitle("Distribution of News Article Lengths") + xlab("Word Count") + ylab("Number of Items") +
     geom_histogram(binwidth=1, colour="#bb1919", fill="#bb1919") + theme_bw()
 # knitr::kable(nsummary)
 rm(news)
 ```
 
-We have filtered some very long lists of names and items with four words or less (which upon inspection turned out to be meaningless text fragments). The longest article is `r max(nwords)` words, and the average is `r mean(nwords)`. A total of `r length(nwords)` articles and `r sum(nwords)` words.
+We have filtered out some very long lists of names and items with four words or less (which upon inspection turned out to be meaningless text fragments). The longest article is `r max(nwords)` words, and the average is `r round(mean(nwords))`. A total of `r length(nwords)` articles and `r sum(nwords)` words.
 
 ### The Blogs
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, cache=TRUE}
 blogs <- readLines("final/en_US/en_US.blogs.txt")
 blengths <- nchar(blogs)
 bwords <- sapply(gregexpr("[[:alpha:]]+", blogs), function(x) sum(x > 0))
 bsummary <- summary(blengths)
 x <- ggplot(as.data.frame(bwords), aes(x=bwords)) + 
-  ggtitle("Distribution of Blog Post Lengths") + xlab("Word Count") +
-    geom_histogram(binwidth=1, colour="black", fill="white") + theme_bw()
+  ggtitle("Distribution of Blog Post Lengths") + xlab("Word Count") + ylab("Number of Posts") +
+    geom_histogram(binwidth=1, colour="#f26300", fill="#f26300") + theme_bw()
 # knitr::kable(bsummary)
-newbwords <- bwords[bwords<500]
+newbwords <- bwords[bwords<300]
 y <- ggplot(as.data.frame(newbwords), aes(x=newbwords)) + 
-  ggtitle("Distribution of Blog Post Lengths") + xlab("Word Count") +
-    geom_histogram(binwidth=1, colour="black", fill="white") + theme_bw()
+  ggtitle("Distribution of Blog Post Lengths (Less than 300 words)") + xlab("Word Count") + 
+  ylab("Number of Posts") +
+    geom_histogram(binwidth=1, colour="#f26300", fill="#f26300") + theme_bw()
 grid.arrange(x,y)
 bwsummary <- summary(bwords)
 rm(blogs)
 ```
 
-This dataset is highly skewed, as only `r length(bwords[bwords>500])` articles (`r round(length(bwords[bwords>500])/length(bwords) * 100,3)`%) are longer than 500 words. The average is `r round(mean(bwords))` words.
+This dataset is highly skewed, as only `r length(bwords[bwords>500])` articles (`r round(length(bwords[bwords>300])/length(bwords) * 100,3)`%) are longer than 300 words. The average is `r round(mean(bwords))` words.
+```{r, echo=FALSE}
+rm(list=ls())
+```
+# Qualitative Analysis
+
+## Top Trigrams
+
+```{r echo=FALSE, cache=TRUE}
+library(tm)
+library(knitr)
+ngframe <- function(texts, n=1) {
+  w <- strsplit(texts, " ", fixed = TRUE)
+  w <- unlist(w)
+  grams <- vapply(ngrams(w, n), paste, "", collapse = " ")
+  freex <- table(grams)
+  freq <- as.vector(freex)
+  ng <- as.vector(names(freex))
+  ntable <- as.data.frame(cbind(ng,freq))
+  ntable$freq <- as.numeric(as.character(ntable$freq))
+  ntable[order(ntable$freq, decreasing=TRUE),]
+}
+
+blogs <- readLines("final/en_US/en_US.blogs.txt", n=100000)
+blogs <- tolower(blogs)
+blogtrigrams <- ngframe(blogs,3)
+rm(blogs)
+
+tweets <- readLines("final/en_US/en_US.twitter.txt", n=100000)
+tweets <- tolower(tweets)
+tweettrigrams <- ngframe(tweets,3)
+rm(tweets)
+
+news <- readLines("final/en_US/en_US.news.txt", n=100000)
+news <- tolower(news)
+newstrigrams <- ngframe(news,3)
+rm(news)
+```
+Below is a table of the most common 15 three-word phrases based on a sample of 10000 items from each category.
+```{r echo=FALSE}
+kable(as.data.frame(cbind(head(as.character(newstrigrams$ng),15),
+                          head(as.character(blogtrigrams$ng),15),
+                          head(as.character(tweettrigrams$ng),15))),
+      col.names=c("News","Blogs","Tweets"))
+
+```
+
+This provides some data-based evidence of what is fairly intuitive. The top 15 for news doesn't contain the word "I", whereas the other two do, and the Twitter data include more emotive language such as "love" and "can't wait". The blog data are more similar to the news data, but include the phrases "I want to" and "I have to" which would be uncharacteristic for a news site. It can also be seen that the bottom two entries for news possibly represent a single four-word phrase, "for the first time".
 
 # Project Strategy
 
-I plan to start off with a fairly unambitious 3rd-level stupid backoff model to have a minimal working system as fast as possible. My next stage will be an attempt to classify inputs as news, blog, or tweet and suggest based on that specific corpus. For example, the word "yo" is a strong hint that we are not reading the nightly news, whereas "incident" or "minister" would tip us off to a greater level of formality. A good strategy might be to use the news dataset as the generic, and add the Twitter dataset when we have some confidence that this is informal English.
+I plan to start off with a fairly unambitious 3rd-level naïve backoff model to have a minimal working system as fast as possible. That means searching for the first two words in a three-word phrase list, then returning the most popular continuation, or falling back to searching for one word in a two-word phrase list and returning the most popular continuation. This should have some success, but the failure mode is to return the most popular single word &mdash; "the" &mdash; which is not optimal. There might be a way to improve this, either by using a "skip one" phrase list or by suggesting which parts of speech can grammatically follow each word, but I am not planning to do that due to time restraints on this project.
+
+My next stage will be an attempt to classify inputs as news, blog, or tweet and suggest next words based on that specific corpus. For example, the words "yo" or "lol" are a strong hint that we are not reading the nightly news, whereas "incident" or "minister" would tip us off to a greater level of formality. A good strategy might be to use the phrases from the news dataset as the generic, and add the phrases from the Twitter dataset when we have some confidence that informal English is being used.

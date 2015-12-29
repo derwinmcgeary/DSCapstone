@@ -1,6 +1,6 @@
 library("tm")
 library("RWeka")
-massive <- readLines("final/en_US/en_US.news.txt", n=10000)
+massive <- readLines("final/en_US/en_US.news.txt", n=1000)
 myCorpus <- Corpus(VectorSource(massive))
 myCorpus <- tm_map(myCorpus, tolower)
 myCorpus <- tm_map(myCorpus, removeNumbers)

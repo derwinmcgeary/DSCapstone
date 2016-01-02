@@ -1,5 +1,4 @@
 library(tm)
-library(knitr)
 library(stringi)
 
 ngframe <- function(texts, n=1) {
@@ -103,7 +102,7 @@ nextwrd <- function(patt,model) {
 
 
 babble <- function(startphrase, mymodel) {
-  for(i in 1:10) {
+  for(i in 1:15) {
     startphrase <- paste(startphrase, nextwrd(startphrase,mymodel), sep=" ")
   }
   startphrase
@@ -113,23 +112,25 @@ inpoot <- function() {
   patt
 }
 
-tweets <- readLines("final/en_US/en_US.twitter.txt", n=300000, skipNul = TRUE)
+tweets <- readLines("final/en_US/en_US.twitter.txt", skipNul = TRUE)
 tweets <- sanitise(tweets)
 ntm <- createmodel(tweets,4)
 print("Size of model")
 format(object.size(ntm),unit="Mb")
 
-news <- readLines("final/en_US/en_US.news.txt", n=300000, skipNul = TRUE)
+news <- readLines("final/en_US/en_US.news.txt", skipNul = TRUE)
 news <- sanitise(news)
 nnm <- createmodel(news,4)
 print("Size of news model")
 format(object.size(nnm),unit="Mb")
 
-blogs <- readLines("final/en_US/en_US.blogs.txt", n=300000, skipNul = TRUE)
+blogs <- readLines("final/en_US/en_US.blogs.txt", skipNul = TRUE)
 blogs <- sanitise(blogs)
 nbm <- createmodel(blogs,4)
 print("Size of model")
 format(object.size(nbm),unit="Mb")
+
+save(ntm,nbm,nnm, file="models1M.RData")
 
 # TODO: Tweet or news machine learning, crossvalidation, skipgrams for middle pronouns, 
 #       part of speech for bigrams, get it onto the server, UX, Presentation

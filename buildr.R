@@ -34,9 +34,6 @@ sanitise <- function(raw) {
   raw
 }
 
-tweets <- readLines("final/en_US/en_US.twitter.txt", n=100000, skipNul = TRUE)
-tweets <- sanitise(tweets)
-
 createmodel <- function(intext, n=3) {
     ugs <- ngframe(intext)
     mymodel <- list(ugs)
@@ -51,41 +48,6 @@ createmodel <- function(intext, n=3) {
     }
     mymodel
 }
-tweetunigrams <- ngframe(tweets)
-
-tweetbigrams <- ngframe(tweets,2)
-tbg <- tweetbigrams[-1]
-tbg$first <- stri_extract_all_words(tweetbigrams$ng, simplify=T)[,1]
-tbg$last <- stri_extract_all_words(tweetbigrams$ng, simplify=T)[,2]
-print("total tweet bigrams")
-format(object.size(tweetbigrams), units="Mb")
-print("size of reduced table")
-format(object.size(tbg), units="Mb")
-
-
-tweettrigrams <- ngframe(tweets,3)
-ttg <- tweettrigrams[-1]
-ttg$first <- stri_extract_all_words(tweettrigrams$ng, simplify=T)[,1]
-ttg$second <- stri_extract_all_words(tweettrigrams$ng, simplify=T)[,2]
-ttg$last <- stri_extract_all_words(tweettrigrams$ng, simplify=T)[,3]
-ttg <- subset(ttg, ttg$freq > 1)
-rm(tweettrigrams)
-
-tweetquadgrams <- ngframe(tweets,4)
-tqg <- tweetquadgrams[-1]
-tqg$first <- stri_extract_all_words(tweetquadgrams$ng, simplify=T)[,1]
-tqg$second <- stri_extract_all_words(tweetquadgrams$ng, simplify=T)[,2]
-tqg$third <- stri_extract_all_words(tweetquadgrams$ng, simplify=T)[,3]
-tqg$last <- stri_extract_all_words(tweetquadgrams$ng, simplify=T)[,4]
-tqg <- subset(tqg, tqg$freq > 1)
-print("total quadgram size")
-format(object.size(tweetquadgrams), units="Mb")
-print("quadgram object size")
-format(object.size(tqg), units="Mb")
-rm(tweetquadgrams)
-
-tweetmodel <- list(tweetunigrams, tbg, ttg, tqg)
-ntm <- createmodel(tweets,4)
 
 lastword <- function(patt, n=1) {
   patt <- unlist(strsplit(patt, split=" "))
@@ -118,23 +80,31 @@ nxtwrd <- function(patt,rnk=1) {
   answer$last[rnk]
 }
 
-nextwrd <- function(patt,model, rnk=1) {
+nextwrd <- function(patt,model) {
+  # this is a terrible function, but I can't see a way to make it much nicer
+  # the problem is the variable number of columns to match
   patt <- sanitise(patt)
   strlen <- length(strsplit(patt,split=" ")[[1]])
   depth <- length(model)
+  searchdepth <- min(depth, strlen + 1)
   answer <- character(0)
-  for(i in depth:1) {
+  for(i in searchdepth:2) {
     if(length(answer)==0) {
-      for(z in 1:i) {
-      cutdown <- subset(model[[i]], model[[i]][] == nthlastword(patt,3))
+      ngtable <- model[[i]]
+      for(x in 1:(ncol(ngtable)-2)) {
+        if(nrow(ngtable) > 0) ngtable <- subset(ngtable, ngtable[(x + 1)]==nthlastword(patt,i-x))
       }
+      if(nrow(ngtable) > 0) answer <- ngtable[1,ncol(ngtable)]
     }
   }
+  if(length(answer)==0) answer <- "the"
+  answer
 }
 
-babble <- function(startphrase) {
+
+babble <- function(startphrase, mymodel) {
   for(i in 1:10) {
-    startphrase <- paste(startphrase, nxtwrd(startphrase), sep=" ")
+    startphrase <- paste(startphrase, nextwrd(startphrase,mymodel), sep=" ")
   }
   startphrase
 }
@@ -142,6 +112,24 @@ inpoot <- function() {
   patt <- readline("Enter words: ")
   patt
 }
+
+tweets <- readLines("final/en_US/en_US.twitter.txt", n=300000, skipNul = TRUE)
+tweets <- sanitise(tweets)
+ntm <- createmodel(tweets,4)
+print("Size of model")
+format(object.size(ntm),unit="Mb")
+
+news <- readLines("final/en_US/en_US.news.txt", n=300000, skipNul = TRUE)
+news <- sanitise(news)
+nnm <- createmodel(news,4)
+print("Size of news model")
+format(object.size(nnm),unit="Mb")
+
+blogs <- readLines("final/en_US/en_US.blogs.txt", n=300000, skipNul = TRUE)
+blogs <- sanitise(blogs)
+nbm <- createmodel(blogs,4)
+print("Size of model")
+format(object.size(nbm),unit="Mb")
 
 # TODO: Tweet or news machine learning, crossvalidation, skipgrams for middle pronouns, 
 #       part of speech for bigrams, get it onto the server, UX, Presentation

@@ -2,6 +2,7 @@ library(tm)
 library(stringi)
 
 ngframe <- function(texts, n=1) {
+  print("ngram frame")
   w <- strsplit(texts, " ", fixed = TRUE)
   w <- unlist(w)
   grams <- vapply(ngrams(w, n), paste, "", collapse = " ")
@@ -9,6 +10,9 @@ ngframe <- function(texts, n=1) {
   freq <- as.vector(freex)
   ng <- as.vector(names(freex))
   ntable <- as.data.frame(cbind(ng,freq))
+  rm(freex)
+  rm(freq)
+  rm(ng)
   ntable$freq <- as.numeric(as.character(ntable$freq))
   ntable$ng <- as.character(ntable$ng)
   ntable[order(ntable$freq, decreasing=TRUE),]
@@ -34,6 +38,7 @@ sanitise <- function(raw) {
 }
 
 createmodel <- function(intext, n=3) {
+  print("creating model")
     ugs <- ngframe(intext)
     mymodel <- list(ugs)
     for(i in 2:n) {
@@ -115,22 +120,31 @@ inpoot <- function() {
 tweets <- readLines("final/en_US/en_US.twitter.txt", skipNul = TRUE)
 tweets <- sanitise(tweets)
 ntm <- createmodel(tweets,4)
-print("Size of model")
+print("Size of tweet model")
 format(object.size(ntm),unit="Mb")
+save(ntm, file="Tweetmodel.RData")
+rm(tweets)
+rm(ntm)
 
 news <- readLines("final/en_US/en_US.news.txt", skipNul = TRUE)
 news <- sanitise(news)
 nnm <- createmodel(news,4)
 print("Size of news model")
 format(object.size(nnm),unit="Mb")
+save(nnm, file="Newsmodel.RData")
+rm(news)
+rm(nnm)
 
 blogs <- readLines("final/en_US/en_US.blogs.txt", skipNul = TRUE)
 blogs <- sanitise(blogs)
 nbm <- createmodel(blogs,4)
-print("Size of model")
+print("Size of blog model")
 format(object.size(nbm),unit="Mb")
+save(nbm, file="Blogmodel.RData")
+rm(blogs)
+rm(nbm)
 
-save(ntm,nbm,nnm, file="models1M.RData")
+print("All models complete.")
 
 # TODO: Tweet or news machine learning, crossvalidation, skipgrams for middle pronouns, 
 #       part of speech for bigrams, get it onto the server, UX, Presentation

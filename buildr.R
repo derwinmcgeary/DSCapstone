@@ -1,6 +1,15 @@
 library(tm)
 library(stringi)
 
+sanitise <- function(raw) {
+  raw <- tolower(raw)
+  raw <- gsub("[^'[:^punct:]]", "", raw, perl=T)
+  raw <- gsub("[[:digit:]]","", raw, perl=T)
+  raw <- gsub("[^[:print:]]","", raw, perl=T)
+  raw <- gsub("\\s+"," ",raw)
+  raw
+}
+
 ngframe <- function(texts, n=1) {
   print("ngram frame")
   w <- strsplit(texts, " ", fixed = TRUE)
@@ -20,7 +29,7 @@ ngframe <- function(texts, n=1) {
 
 nthlastword <- function(patt,n=1) {
   patt <- unlist(strsplit(patt, split=" "))
-  patt[(length(patt) - n + 1)]
+  patt[max(1,(length(patt) - n + 1))]
 }
 
 predixxor <- function(patt) {
@@ -86,13 +95,11 @@ inpoot <- function() {
 
 ngtodatatable <- function(ng) {
   # merge the middle columns
+  if(ncol(ng) == 6) ng$start <- paste(ng[,2],ng[,3], ng[,4], ng[,5], sep=" ")
   if(ncol(ng) == 5) ng$start <- paste(ng[,2],ng[,3], ng[,4], sep=" ")
-  if(ncol(ng) == 4) {
-    ng$start <- paste(ng[,2],ng[,3], sep=" ")
-    print(head(ng))
-  }
+  if(ncol(ng) == 4) ng$start <- paste(ng[,2],ng[,3], sep=" ")
   if(ncol(ng) == 3) ng$start <- ng[,2]
-  if(ncol(ng) == 2) { 
+  if(ncol(ng) == 2) {
     ng <- ng[c(2,1)]
     colnames(ng) <- c("freq", "start")
   }
@@ -147,6 +154,3 @@ rm(nbm)
 }
 
 print("All models complete.")
-
-# TODO: Tweet or news machine learning, crossvalidation, skipgrams for middle pronouns, 
-#       part of speech for bigrams, get it onto the server, UX, Presentation

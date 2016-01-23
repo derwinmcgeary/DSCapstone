@@ -30,7 +30,7 @@ nxtwrd <- function(patt,dtmodel) {
   answer[1]$end
 }
 
-sanitise <- function(raw) {
+censor <- function(rude) {
   ragluv <- c("kcuf","gnikcuf","dekcuf",
               "rekcuf","skcuf","tnuc", "srekcuf",
               "stnuc","rekcufrehtom", "srekcufrehtom",
@@ -38,13 +38,15 @@ sanitise <- function(raw) {
               "ikap", "cips", "gow", 
               "hctib", "sehctib", "toggaf", 
               "stoggaf", "gaf", "sgaf", 
-              "ekik", "daehgar", "sknihc")
+              "ekik", "daehgar", "knihc", "erohw")
   
+  for(xxx in stri_reverse(ragluv)) raw <- gsub(xxx,"",raw)
+}
+sanitise <- function(raw) {
   raw <- tolower(raw)
   raw <- gsub("[^'[:^punct:]]", "", raw, perl=T)
   raw <- gsub("[[:digit:]]","", raw, perl=T)
   raw <- gsub("[^[:print:]]","", raw, perl=T)
-  for(xxx in stri_reverse(ragluv)) raw <- gsub(xxx,"",raw)
   raw <- gsub("\\s+"," ",raw)
   raw
 }

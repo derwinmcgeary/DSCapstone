@@ -10,6 +10,22 @@ sanitise <- function(raw) {
   raw
 }
 
+createmodel <- function(intext, n=3) {
+  print("creating model")
+  ugs <- ngframe(intext)
+  mymodel <- list(ugs)
+  for(i in 2:n) {
+    gf <- ngframe(intext,i)
+    ngs <- gf[-1]
+    for(x in 1:i) { 
+      ngs[(x+1)] <- stri_extract_all_words(gf$ng, simplify=T)[,x]
+    }
+    ngs <- subset(ngs,ngs$freq > 1)
+    mymodel[[i]] <- ngs
+  }
+  mymodel
+}
+
 ngframe <- function(texts, n=1) {
   print("ngram frame")
   w <- strsplit(texts, " ", fixed = TRUE)
